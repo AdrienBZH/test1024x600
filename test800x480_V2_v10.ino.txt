@@ -1,0 +1,51 @@
+//v10
+// Fonctionne affiche l'image binary raw stocké sur la sd card
+// - il faut monter la sd : dans le ino #include "user_sd.h" + fichiers user_sd.ccp et h
+// - pour un screen si le fond est une image, il faut utiliser un widget image et pas un backround
+// - exporter depuis squareline studio les images en binary raw (pas tester les autres modes)
+// - dans lv_conf : 
+//  #define LV_MEM_CUSTOM 1 , 
+//  #define LV_USE_FS_FATFS 1
+//    #if LV_USE_FS_FATFS
+//    #define LV_FS_FATFS_LETTER 'S'     /*Set an upper cased letter on which the drive will accessible (e.g. 'A')*/
+//    #define LV_FS_FATFS_CACHE_SIZE 4096    /*>0 to cache this number of bytes in lv_fs_read()*/
+//    #endif
+// - placer les images bin sur la sd card dans le repertoire assets
+
+#include <Arduino.h>
+#include "user_sd.h"    // ton user_sd.h (Waveshare example)
+#include "lvgl_port.h"
+#include "rgb_lcd_port.h"
+#include "src/ui.h"     // code généré SquareLine
+
+#include "list_file_sd.h" // nouvelle unité qui contient la recherche des .bin sur la SD
+
+void setup() {
+  Serial.begin(115200);
+  delay(200);
+
+  static esp_lcd_panel_handle_t panel_handle = NULL;
+  static esp_lcd_touch_handle_t tp_handle = NULL;
+  tp_handle = touch_gt911_init();
+  panel_handle = waveshare_esp32_s3_rgb_lcd_init();
+
+  ESP_ERROR_CHECK(lvgl_port_init(panel_handle, tp_handle));
+
+  // Initialize SD card and scan /assets using the list_file_sd module
+  if (sd_list_init("/assets") != ESP_OK) {
+      // If SD card initialization or scan fails, abort (preserve existing behavior)
+      return;
+  }
+
+  if (lvgl_port_lock(-1)) {
+    delay(50);
+    ui_init();
+    lvgl_port_unlock();
+  }
+
+  wavesahre_rgb_lcd_bl_on();
+}
+
+void loop() {
+  //delay(1000);
+}
